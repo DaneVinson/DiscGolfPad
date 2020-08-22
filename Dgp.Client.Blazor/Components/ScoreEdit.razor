@@ -1,0 +1,13 @@
+﻿<tr>
+    <td>@HoleNumber</td>
+    <td>@Score.Par</td>
+    <td><InputNumber @bind-Value="@Score.Score" class="form-control" type="number" /></td>
+</tr>
+
+@code {
+    [Parameter]
+    public int HoleNumber { get; set; }
+
+    [Parameter]
+    public HoleScore Score { get; set; } = new HoleScore();
+}

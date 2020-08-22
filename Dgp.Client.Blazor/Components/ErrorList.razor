@@ -1,0 +1,23 @@
+﻿@if (Errors != null && Errors.Any())
+{
+    <div class="alert alert-danger" role="alert">
+        @if (Errors.Count == 1)
+        {
+            @Errors.First()
+        }
+        else
+        {
+            <ul>
+                @foreach (var error in Errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<string>? Errors { get; set; }
+}

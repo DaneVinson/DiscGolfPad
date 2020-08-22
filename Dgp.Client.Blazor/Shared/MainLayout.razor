@@ -1,0 +1,16 @@
+﻿@inherits LayoutComponentBase
+@inject IAppStateService StateService
+
+<div class="container">
+    <h1>Disc Golf Pad (Blazor)</h1>
+    <hr />
+    @Body
+</div>
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        StateService.StateHasChanged = StateHasChanged;
+    }
+}

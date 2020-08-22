@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Dto.fs" />
+    <Compile Include="SimpleTypes.fs" />
+    <Compile Include="ComplexTypes.fs" />
+    <Compile Include="DomainLogic.fs" />
+  </ItemGroup>
+
+</Project>

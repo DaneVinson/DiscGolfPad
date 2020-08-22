@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Disc Golf Pad</title>
+    <link rel="icon" type="image/png" href="/disc.png" />
+    <link href="./bootstrap-superhero.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="app">
+        <div v-if="isBusy" class="overlay">
+            <i class="fa fa-circle-o-notch fa-spin" style="position: absolute; top:30%; left:45%; font-size:96px"></i>
+        </div>
+        <div v-if="!isBusy" class="container">
+            <h1>Disc Golf Pad (Vue.js)</h1>
+            <hr>
+            <h3>{{caption}}</h3>
+            <!--Toolbar-->
+            <div class="col-12">
+                <button id="cancelButton" v-if="mode != 'Courses'" v-on:click="cancel()" class="btn btn-info"><i class="fa fa-ban"></i>&nbsp;Cancel</button>
+                <button id="addButton" v-if="mode == 'Courses' || mode == 'Scorecards'" v-on:click="add()" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Add</button>
+                <button id="saveButton" v-if="isEdit" v-bind:disabled="errors.any() && !isDelete" v-on:click="save()" class="btn" v-bind:class="getSaveButtonClass()"><i class="fa fa-save">&nbsp;Save</i></button>
+                <button id="deleteButton" v-if="isEdit && !isNew" v-bind:disabled="isDelete" v-on:click="markForDelete()" class="btn btn-danger"><i class="fa fa-times">&nbsp;Delete</i></button>
+            </div>
+            <br>
+            <!--Courses-->
+            <div v-if="mode == 'Courses' && courses && courses.length">
+                <table class="table table-sm">
+                    <thead class="thead">
+                        <tr>
+                            <th></th>
+                            <th>Course</th>
+                            <th>Holes</th>
+                            <th>Par (Avg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="course in courses">
+                            <td>
+                                <button v-on:click="addScorecard(course.id)" class="btn btn-sm btn-info"><i class="fa fa-file-o"></i></button>
+                                <button v-on:click="editCourse(course.id)" class="btn btn-sm btn-info"><i class="fa fa-edit"></i></button>
+                                <button v-on:click="viewScorecards(course.id)" class="btn btn-sm btn-info"><i class="fa fa-list-ul"></i></button>
+                            </td>
+                            <td>{{course.name}}</td>
+                            <td>{{course.holes}}</td>
+                            <td>{{course.par}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!--Scorecards-->
+            <div v-if="mode == 'Scorecards'">
+                <table class="table table-sm">
+                    <thead class="thead">
+                        <tr>
+                            <th></th>
+                            <th>Date</th>
+                            <th>Scores</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="scorecard in scorecards">
+                            <td>
+                                <button v-on:click="editScorecard(scorecard.id)" class="btn btn-sm btn-info"><i class="fa fa-edit"></i></button>
+                            </td>
+                            <td>{{scorecard.date}}</td>
+                            <td>
+                                <h5><span v-for="(score, index) in scorecard.holeScores" class="badge" v-bind:class="getScoreClass(scorecard, index)">{{ score }}</span></h5>
+                            </td>
+                            <td>{{ getTotalScore(scorecard) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!--Course and Scorecard editing form-->
+            <form>
+                <!--Course-->
+                <div v-if="mode == 'Course'">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input id="name" v-model="editedCourse.name" v-validate="'required'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('name') }" type="text" autocomplete="off" name="name" placeholder="Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input id="location" v-model="editedCourse.location" v-validate="'required'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('location') }" type="text" autocomplete="off" name="location" placeholder="Location">
+                    </div>
+                    <div v-if="!editedCourse.holePars.length" class="form-group">
+                        <hr>
+                        <label for="location">Holes</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <button id="generateHolesButton" v-on:click="generateHoles()" v-bind:disabled="generateHoleCount < 1" class="btn btn-primary" type="button"><i class="fa fa-bolt"></i></button>
+                            </div>
+                            <input id="holeCount" v-model="generateHoleCount" v-validate="'min_value:1'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('holeCount') }" type="number" name="holeCount">
+                        </div>
+                    </div>
+                    <table v-if="editedCourse.holePars.length" class="table">
+                        <thead class="thead">
+                            <tr>
+                                <th>Hole</th>
+                                <th>Par</th>
+                                <th>Distance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(par, index) in editedCourse.holePars">
+                                <td>{{index + 1}}</td>
+                                <td><input v-bind:id="'pars' + index" v-model="editedCourse.holePars[index]" v-validate="'min_value:1'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('pars' + index) }" v-bind:name="'pars' + index" type="number" /></td>
+                                <td><input v-bind:id="'distances' + index" v-model="editedCourse.holeDistances[index]" v-validate="'min_value:0'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('distances' + index) }" v-bind:name="'distances' + index" type="number" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!--Scorecard-->
+                <div v-if="mode == 'Scorecard'">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input id="date" v-model="editedScorecard.date" v-validate="'date_format:M/D/YYYY'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('date') }" type="text" autocomplete="off" name="date" placeholder="M/D/YYYY">
+                    </div>
+                    <table class="table">
+                        <thead class="thead">
+                            <tr>
+                                <th>Hole</th>
+                                <th>Score</th>
+                                <th>Par</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(par, index) in editedScorecard.holeScores">
+                                <td>{{index + 1}}</td>
+                                <td><input v-bind:id="'scores' + index" v-model="editedScorecard.holeScores[index]" v-validate="'min_value:1'" data-vv-as="field" class="form-control" v-bind:class="{ 'is-invalid': errors.has('scores' + index) }" v-bind:name="'scores' + index" type="number" /></td>
+                                <td>{{ editedScorecard.holePars[index] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.0/vue-resource.min.js"></script>
+    <script src="https://unpkg.com/vee-validate@latest"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

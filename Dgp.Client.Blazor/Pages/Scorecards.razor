@@ -1,0 +1,51 @@
+﻿@page "/scorecards/{CourseId}"
+@inject ScorecardsViewModel ViewModel
+
+<div class="col-12">
+    <h3>@ViewModel.Caption</h3>
+    <button @onclick="@ViewModel.Cancel" class="btn btn-default"><i class="fa fa-ban"></i>&nbsp;Cancel</button>
+    <button @onclick="@(() => ViewModel.EditScorecard("new"))" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;New</button>
+</div>
+<br />
+<br />
+@if (ViewModel.Scorecards.Some())
+{
+    <table class="table table-sm">
+        <thead class="thead">
+            <tr>
+                <th></th>
+                <th>Date</th>
+                <th>Scores</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var scorecard in ViewModel.Scorecards)
+            {
+                <tr>
+                    <td><button @onclick="@(() => ViewModel.EditScorecard(scorecard.Id.ToString()))" class="btn btn-sm"><i class="fa fa-edit"></i></button></td>
+                    <td>@scorecard.Date.ToString("MM/dd/yyyy")</td>
+                    <td>
+                        <h5>
+                            @for (int i = 0; i < scorecard.Scores.Length; i++)
+                            {
+                                <span class="@ViewModel.GetScoreClass(scorecard.Scores[i])">@scorecard.Scores[i].Score</span>
+                            }
+                        </h5>
+                    </td>
+                    <td>@scorecard.ToStringNetScore()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public string CourseId { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeScorecardsAsync(CourseId);
+    }
+}

@@ -1,0 +1,13 @@
+﻿<tr>
+    <td>@HoleNumber</td>
+    <td><InputNumber @bind-Value="@Hole.Par" class="form-control" type="number" /></td>
+    <td><InputNumber @bind-Value="@Hole.Distance" class="form-control" type="number" /></td>
+</tr>
+
+@code {
+    [Parameter]
+    public int HoleNumber { get; set; }
+
+    [Parameter]
+    public Hole Hole { get; set; } = new Hole();
+}

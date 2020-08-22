@@ -1,0 +1,69 @@
+﻿@page "/scorecard/{CourseId}/{Id}"
+@inject ScorecardViewModel ViewModel
+
+<div class="col-12">
+    <h3>@ViewModel.Caption</h3>
+</div>
+
+<!--Toolbar-->
+<div class="col-12">
+    <button @onclick="@ViewModel.Cancel" class="btn btn-default"><i class="fa fa-ban"></i>&nbsp;Cancel</button>
+    <button @onclick="@(async () => await ViewModel.SaveAsync())" class="@ViewModel.SaveButtonClass"><i class="fa fa-save">&nbsp;Save</i></button>
+    @if (!ViewModel.IsNew)
+    {
+        <button @onclick="@ViewModel.MarkForDelete" disabled="@(ViewModel.IsDelete)" class="btn btn-danger"><i class="fa fa-times">&nbsp;Delete</i></button>
+    }
+</div>
+<br />
+@if (Context != null)
+{
+    <EditForm EditContext="@Context">
+        <FluentValidator/>
+        <ErrorList Errors="@ViewModel.Errors"/>
+        <div class="form-group">
+            <label for="date">Date</label>
+            <InputDate @bind-Value="@ViewModel.Entity.Date" class="form-control" type="date" autocomplete="off" id="date"/>
+        </div>
+        <table class="table">
+            <thead class="thead">
+                <tr>
+                    <th>Hole</th>
+                    <th>Par</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < ViewModel.Entity.Scores.Length; i++)
+                {
+                    <ScoreEdit Score="ViewModel.Entity.Scores[i]" HoleNumber="@(i + 1)" />
+                }
+            </tbody>
+        </table>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public string CourseId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    public EditContext? Context { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync(CourseId, Id);
+        Context = new EditContext(ViewModel.Entity);
+        ViewModel.Validate = Context.Validate;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Context?.Validate();
+            StateHasChanged();
+        }
+    }
+}

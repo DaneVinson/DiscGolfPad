@@ -1,0 +1,51 @@
+﻿@page "/"
+@page "/courses"
+@inject CoursesViewModel ViewModel
+
+<div class="col-12">
+    <h3>
+        <span class="pull-left">Courses&nbsp;&nbsp;</span>
+        <button @onclick="@(() => ViewModel.EditCourse("new"))" class="btn btn-primary pull-left"><i class="fa fa-plus"></i></button>
+    </h3>
+</div>
+<br />
+@if (ViewModel.Courses.Some() && !ViewModel.IsBusy)
+{
+    <table class="table table-sm">
+        <thead class="thead">
+            <tr>
+                <th></th>
+                <th>Course</th>
+                <th>Holes</th>
+                <th>Par</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var course in ViewModel.Courses)
+            {
+                <tr>
+                    <td>
+                        <a href="course/@course.Id" class="btn btn-sm"><i class="fas fa-edit"></i></a>
+                        <a href="scorecards/@course.Id" class="btn btn-sm"><i class="fas fa-list-ul"></i></a>
+                        <a href="scorecard/@course.Id/new" class="btn btn-sm"><i class="far fa-file"></i></a>
+                    </td>
+                    <td>@course.Name</td>
+                    <td>@course.Holes</td>
+                    <td>@course.Par</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@if (ViewModel.IsBusy)
+{
+    <i class="fas fa-2x fa-circle-notch fa-spin"></i>
+}
+
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeCoursesAsync();
+    }
+}

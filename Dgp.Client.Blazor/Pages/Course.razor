@@ -1,0 +1,87 @@
+﻿@page "/course/{Id}"
+@inject CourseViewModel ViewModel
+
+<div class="col-12">
+    <h3>@ViewModel.Caption</h3>
+</div>
+<!--Toolbar-->
+<div class="col-12">
+    <button @onclick="@ViewModel.Cancel" class="btn btn-default"><i class="fa fa-ban"></i>&nbsp;Cancel</button>
+    <button @onclick="@(async () => await ViewModel.SaveAsync())" class="@ViewModel.SaveButtonClass"><i class="fa fa-save">&nbsp;Save</i></button>
+    @if (!ViewModel.IsNew)
+    {
+        <button @onclick="@ViewModel.MarkForDelete" disabled="@(ViewModel.IsDelete)" class="btn btn-danger"><i class="fa fa-times">&nbsp;Delete</i></button>
+    }
+</div>
+<br />
+@if (Context != null)
+{
+    <EditForm EditContext="@Context">
+        <FluentValidator/>
+        <ErrorList Errors="@ViewModel.Errors"/>
+        <!--Course properties-->
+        <div class="form-group">
+            <label>Name</label>
+            <InputText @bind-Value="@ViewModel.Entity.Name" class="form-control" type="text" autocomplet="off" />
+        </div>
+        <div class="form-group">
+            <label>Location</label>
+            <InputText @bind-Value="@ViewModel.Entity.Location" class="form-control" type="text" autocomplete="off" />
+        </div>
+        <!--Course hole generator or hole properties-->
+        @if (ViewModel.Entity.Holes == null || ViewModel.Entity.Holes.Length == 0)
+        {
+            <div class="form-group">
+                <hr>
+                <label>Add Holes</label>
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <button @onclick="@ViewModel.GenerateHoles" disabled="@(ViewModel.HoleGenerationCount < 1)" class="btn btn-primary" type="button"><i class="fa fa-bolt"></i></button>
+                    </div>
+                    <InputNumber @bind-Value="@ViewModel.HoleGenerationCount" class="@(ViewModel.HoleGenerationCount < 1 ? "invalid" : "")" type="number" />
+                </div>
+            </div>
+        }
+        else
+        {
+            <table class="table">
+                <thead class="thead">
+                    <tr>
+                        <th>Hole</th>
+                        <th>Par</th>
+                        <th>Distance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < ViewModel.Entity.Holes.Length; i++)
+                    {
+                        <HoleEdit Hole="@ViewModel.Entity.Holes[i]" HoleNumber="@(i + 1)" />
+                    }
+                </tbody>
+            </table>
+        }
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    public EditContext? Context { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync(Id);
+        Context = new EditContext(ViewModel.Entity);
+        ViewModel.Validate = Context.Validate;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Context?.Validate();
+            StateHasChanged();
+        }
+    }
+}
